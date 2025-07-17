@@ -128,7 +128,8 @@
         .language-toggle {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.5rem;
+            flex-shrink: 0;
         }
 
         .translate-button {
@@ -144,6 +145,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            white-space: nowrap;
         }
 
         .translate-button:hover {
@@ -214,6 +216,17 @@
 
         .mobile-nav a:hover {
             background: var(--bg-light);
+        }
+
+        .mobile-translate-container {
+            padding: 1rem 2rem;
+            border-top: 1px solid #eee;
+        }
+
+        .mobile-translate-container .translate-button {
+            width: 100%;
+            justify-content: center;
+            margin: 0;
         }
 
         /* Hero Section */
@@ -594,10 +607,6 @@
                 display: block;
             }
 
-            .language-toggle {
-                margin-right: 1rem;
-            }
-
             .translate-button {
                 padding: 6px 12px;
                 font-size: 0.8rem;
@@ -710,13 +719,13 @@
                 <li><a href="#services" onclick="closeMobileMenu()">Services</a></li>
                 <li><a href="#testimonials" onclick="closeMobileMenu()">Testimonials</a></li>
                 <li><a href="#contact" onclick="closeMobileMenu()">Contact</a></li>
-                <li>
-                    <button id="mobileTranslateBtn" class="translate-button" onclick="toggleTranslate()" style="margin: 1rem 2rem; width: calc(100% - 4rem);">
-                        <i class="fas fa-language"></i>
-                        <span id="mobileTranslateText">తెలుగు</span>
-                    </button>
-                </li>
             </ul>
+            <div class="mobile-translate-container">
+                <button id="mobileTranslateBtn" class="translate-button" onclick="toggleTranslate()">
+                    <i class="fas fa-language"></i>
+                    <span id="mobileTranslateText">తెలుగు</span>
+                </button>
+            </div>
         </div>
         
         <!-- Hidden Google Translate Element -->
@@ -1031,8 +1040,14 @@
 
         // Language Translation Functions
         let isTranslated = false;
+        let googleTranslateReady = false;
 
         function toggleTranslate() {
+            if (!googleTranslateReady) {
+                console.log('Google Translate not ready yet');
+                return;
+            }
+
             const translateBtn = document.getElementById('translateBtn');
             const translateText = document.getElementById('translateText');
             const mobileTranslateBtn = document.getElementById('mobileTranslateBtn');
@@ -1040,7 +1055,7 @@
 
             if (!isTranslated) {
                 // Translate to Telugu
-                translateToTelugu();
+                triggerGoogleTranslate('te');
                 translateBtn.classList.add('active');
                 mobileTranslateBtn.classList.add('active');
                 translateText.textContent = 'English';
@@ -1048,7 +1063,7 @@
                 isTranslated = true;
             } else {
                 // Translate back to English
-                translateToEnglish();
+                triggerGoogleTranslate('en');
                 translateBtn.classList.remove('active');
                 mobileTranslateBtn.classList.remove('active');
                 translateText.textContent = 'తెలుగు';
@@ -1057,36 +1072,47 @@
             }
         }
 
-        function translateToTelugu() {
-            // Wait for Google Translate to load
-            setTimeout(() => {
-                const selectElement = document.querySelector('.goog-te-combo');
-                if (selectElement) {
-                    selectElement.value = 'te';
-                    selectElement.dispatchEvent(new Event('change'));
-                }
-            }, 1000);
+        function triggerGoogleTranslate(targetLang) {
+            const selectElement = document.querySelector('.goog-te-combo');
+            if (selectElement) {
+                selectElement.value = targetLang;
+                selectElement.dispatchEvent(new Event('change'));
+            } else {
+                console.log('Google Translate select element not found');
+            }
         }
 
-        function translateToEnglish() {
-            setTimeout(() => {
+        // Enhanced Google Translate initialization
+        function initializeGoogleTranslate() {
+            let attempts = 0;
+            const maxAttempts = 10;
+            
+            const checkTranslateReady = () => {
+                attempts++;
                 const selectElement = document.querySelector('.goog-te-combo');
+                
                 if (selectElement) {
-                    selectElement.value = 'en';
-                    selectElement.dispatchEvent(new Event('change'));
+                    googleTranslateReady = true;
+                    console.log('Google Translate is ready');
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkTranslateReady, 500);
+                } else {
+                    console.log('Google Translate failed to initialize after maximum attempts');
                 }
-            }, 100);
+            };
+            
+            // Initialize Google Translate
+            if (typeof google !== 'undefined' && google.translate) {
+                googleTranslateElementInit();
+                setTimeout(checkTranslateReady, 1000);
+            } else {
+                setTimeout(initializeGoogleTranslate, 500);
+            }
         }
 
-        // Initialize translation when page loads
+        // Initialize when page loads
         window.addEventListener('load', () => {
-            // Ensure Google Translate is ready
-            setTimeout(() => {
-                const translateElement = document.getElementById('google_translate_element');
-                if (translateElement && !translateElement.innerHTML) {
-                    googleTranslateElementInit();
-                }
-            }, 2000);
+            setTimeout(initializeGoogleTranslate, 1000);
         });
     </script>
 </body>
