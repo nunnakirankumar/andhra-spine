@@ -111,6 +111,49 @@
             cursor: pointer;
         }
 
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 999;
+            padding: 1rem 0;
+        }
+
+        .mobile-nav.active {
+            display: block;
+        }
+
+        .mobile-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .mobile-nav li {
+            border-bottom: 1px solid #eee;
+        }
+
+        .mobile-nav li:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-nav a {
+            display: block;
+            padding: 1rem 2rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .mobile-nav a:hover {
+            background: var(--bg-light);
+        }
+
         /* Hero Section */
         .hero {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -582,6 +625,16 @@
                 </button>
             </nav>
         </div>
+        <!-- Mobile Navigation -->
+        <div class="mobile-nav" id="mobileNav">
+            <ul>
+                <li><a href="#home" onclick="closeMobileMenu()">Home</a></li>
+                <li><a href="#about" onclick="closeMobileMenu()">About</a></li>
+                <li><a href="#services" onclick="closeMobileMenu()">Services</a></li>
+                <li><a href="#testimonials" onclick="closeMobileMenu()">Testimonials</a></li>
+                <li><a href="#contact" onclick="closeMobileMenu()">Contact</a></li>
+            </ul>
+        </div>
     </header>
 
     <!-- Hero Section -->
@@ -800,10 +853,45 @@
             showTestimonial(currentTestimonial);
         }, 5000);
 
-        // Mobile menu toggle (placeholder - would need actual mobile menu implementation)
+        // Mobile menu toggle
         function toggleMobileMenu() {
-            // This would typically show/hide a mobile navigation menu
-            console.log('Mobile menu toggled');
+            const mobileNav = document.getElementById('mobileNav');
+            const menuIcon = document.querySelector('.mobile-menu i');
+            
+            mobileNav.classList.toggle('active');
+            
+            // Change icon between bars and times
+            if (mobileNav.classList.contains('active')) {
+                menuIcon.className = 'fas fa-times';
+            } else {
+                menuIcon.className = 'fas fa-bars';
+            }
+        }
+
+        // Close mobile menu when link is clicked
+        function closeMobileMenu() {
+            const mobileNav = document.getElementById('mobileNav');
+            const menuIcon = document.querySelector('.mobile-menu i');
+            
+            mobileNav.classList.remove('active');
+            menuIcon.className = 'fas fa-bars';
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileNav = document.getElementById('mobileNav');
+            const mobileMenu = document.querySelector('.mobile-menu');
+            
+            if (!mobileNav.contains(event.target) && !mobileMenu.contains(event.target)) {
+                closeMobileMenu();
+            }
+        });
+
+        // Close mobile menu on window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                closeMobileMenu();
+            }
         }
 
         // Smooth scrolling for navigation links
