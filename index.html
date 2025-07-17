@@ -15,6 +15,19 @@
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
+    <!-- Google Translate Script -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,te',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
     <style>
         * {
             margin: 0;
@@ -109,6 +122,55 @@
             color: var(--primary-color);
             font-size: 1.5rem;
             cursor: pointer;
+        }
+
+        /* Language Toggle Styles */
+        .language-toggle {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .translate-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .translate-button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        .translate-button.active {
+            background: var(--secondary-color);
+        }
+
+        /* Hide default Google Translate widget */
+        #google_translate_element {
+            display: none;
+        }
+
+        /* Override Google Translate styles */
+        .goog-te-banner-frame.skiptranslate {
+            display: none !important;
+        }
+
+        body {
+            top: 0px !important;
+        }
+
+        .goog-te-balloon-frame {
+            display: none !important;
         }
 
         .mobile-nav {
@@ -532,6 +594,15 @@
                 display: block;
             }
 
+            .language-toggle {
+                margin-right: 1rem;
+            }
+
+            .translate-button {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+
             .hero h1 {
                 font-size: 2rem;
             }
@@ -620,9 +691,15 @@
                     <li><a href="#testimonials">Testimonials</a></li>
                     <li><a href="#contact">Contact</a></li>
                 </ul>
-                <button class="mobile-menu" onclick="toggleMobileMenu()">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div class="language-toggle">
+                    <button id="translateBtn" class="translate-button" onclick="toggleTranslate()">
+                        <i class="fas fa-language"></i>
+                        <span id="translateText">తెలుగు</span>
+                    </button>
+                    <button class="mobile-menu" onclick="toggleMobileMenu()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
             </nav>
         </div>
         <!-- Mobile Navigation -->
@@ -633,8 +710,17 @@
                 <li><a href="#services" onclick="closeMobileMenu()">Services</a></li>
                 <li><a href="#testimonials" onclick="closeMobileMenu()">Testimonials</a></li>
                 <li><a href="#contact" onclick="closeMobileMenu()">Contact</a></li>
+                <li>
+                    <button id="mobileTranslateBtn" class="translate-button" onclick="toggleTranslate()" style="margin: 1rem 2rem; width: calc(100% - 4rem);">
+                        <i class="fas fa-language"></i>
+                        <span id="mobileTranslateText">తెలుగు</span>
+                    </button>
+                </li>
             </ul>
         </div>
+        
+        <!-- Hidden Google Translate Element -->
+        <div id="google_translate_element"></div>
     </header>
 
     <!-- Hero Section -->
@@ -941,6 +1027,66 @@
             el.style.transform = 'translateY(30px)';
             el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
             observer.observe(el);
+        });
+
+        // Language Translation Functions
+        let isTranslated = false;
+
+        function toggleTranslate() {
+            const translateBtn = document.getElementById('translateBtn');
+            const translateText = document.getElementById('translateText');
+            const mobileTranslateBtn = document.getElementById('mobileTranslateBtn');
+            const mobileTranslateText = document.getElementById('mobileTranslateText');
+
+            if (!isTranslated) {
+                // Translate to Telugu
+                translateToTelugu();
+                translateBtn.classList.add('active');
+                mobileTranslateBtn.classList.add('active');
+                translateText.textContent = 'English';
+                mobileTranslateText.textContent = 'English';
+                isTranslated = true;
+            } else {
+                // Translate back to English
+                translateToEnglish();
+                translateBtn.classList.remove('active');
+                mobileTranslateBtn.classList.remove('active');
+                translateText.textContent = 'తెలుగు';
+                mobileTranslateText.textContent = 'తెలుగు';
+                isTranslated = false;
+            }
+        }
+
+        function translateToTelugu() {
+            // Wait for Google Translate to load
+            setTimeout(() => {
+                const selectElement = document.querySelector('.goog-te-combo');
+                if (selectElement) {
+                    selectElement.value = 'te';
+                    selectElement.dispatchEvent(new Event('change'));
+                }
+            }, 1000);
+        }
+
+        function translateToEnglish() {
+            setTimeout(() => {
+                const selectElement = document.querySelector('.goog-te-combo');
+                if (selectElement) {
+                    selectElement.value = 'en';
+                    selectElement.dispatchEvent(new Event('change'));
+                }
+            }, 100);
+        }
+
+        // Initialize translation when page loads
+        window.addEventListener('load', () => {
+            // Ensure Google Translate is ready
+            setTimeout(() => {
+                const translateElement = document.getElementById('google_translate_element');
+                if (translateElement && !translateElement.innerHTML) {
+                    googleTranslateElementInit();
+                }
+            }, 2000);
         });
     </script>
 </body>
