@@ -20,10 +20,17 @@
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'en',
-                includedLanguages: 'en,te',
+                includedLanguages: 'en,te,hi',
                 layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                autoDisplay: false
+                autoDisplay: false,
+                multilanguagePage: true
             }, 'google_translate_element');
+            
+            // Set up callback for when translation is ready
+            setTimeout(function() {
+                googleTranslateReady = true;
+                console.log('Google Translate initialized successfully');
+            }, 2000);
         }
     </script>
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
@@ -159,7 +166,11 @@
 
         /* Hide default Google Translate widget */
         #google_translate_element {
-            display: none;
+            display: none !important;
+        }
+        
+        .goog-te-gadget {
+            display: none !important;
         }
 
         /* Override Google Translate styles */
@@ -172,6 +183,14 @@
         }
 
         .goog-te-balloon-frame {
+            display: none !important;
+        }
+        
+        .goog-te-banner-frame {
+            display: none !important;
+        }
+        
+        .goog-logo-link {
             display: none !important;
         }
 
@@ -1041,10 +1060,12 @@
         // Language Translation Functions
         let isTranslated = false;
         let googleTranslateReady = false;
+        let translateWidget = null;
 
         function toggleTranslate() {
             if (!googleTranslateReady) {
-                console.log('Google Translate not ready yet');
+                console.log('Google Translate not ready yet, initializing...');
+                initializeGoogleTranslate();
                 return;
             }
 
@@ -1055,7 +1076,7 @@
 
             if (!isTranslated) {
                 // Translate to Telugu
-                triggerGoogleTranslate('te');
+                changeLanguage('te');
                 translateBtn.classList.add('active');
                 mobileTranslateBtn.classList.add('active');
                 translateText.textContent = 'English';
@@ -1063,7 +1084,7 @@
                 isTranslated = true;
             } else {
                 // Translate back to English
-                triggerGoogleTranslate('en');
+                changeLanguage('en');
                 translateBtn.classList.remove('active');
                 mobileTranslateBtn.classList.remove('active');
                 translateText.textContent = 'తెలుగు';
@@ -1072,11 +1093,141 @@
             }
         }
 
-        function triggerGoogleTranslate(targetLang) {
+        function changeLanguage(targetLang) {
+            console.log('Attempting to change language to:', targetLang);
+            
+            // Method 1: Try using the select dropdown
             const selectElement = document.querySelector('.goog-te-combo');
             if (selectElement) {
+                console.log('Found select element, changing language');
                 selectElement.value = targetLang;
                 selectElement.dispatchEvent(new Event('change'));
+                return;
+            }
+            
+            // Method 2: Try using the Google Translate object directly
+            if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+                console.log('Using Google Translate object directly');
+                const translateElement = new google.translate.TranslateElement({
+                    pageLanguage: 'en',
+                    includedLanguages: 'en,te',
+                    layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+                }, 'google_translate_element');
+                
+                setTimeout(() => {
+                    const newSelect = document.querySelector('.goog-te-combo');
+                    if (newSelect) {
+                        newSelect.value = targetLang;
+                        newSelect.dispatchEvent(new Event('change'));
+                    }
+                }, 1000);
+                return;
+            }
+            
+            // Method 3: Try clicking language links if they exist
+            const langLinks = document.querySelectorAll('a.goog-te-menu2-item span.text');
+            for (let link of langLinks) {
+                if ((targetLang === 'te' && link.textContent.includes('Telugu')) ||
+                    (targetLang === 'en' && link.textContent.includes('English'))) {
+                    link.click();
+                    return;
+                }
+            }
+            
+            console.log('Could not find translation method');
+        }
+
+        function waitForGoogleTranslate(callback, maxAttempts = 20) {
+            let attempts = 0;
+            
+            const checkReady = () => {
+                attempts++;
+                if (window.google && window.google.translate && document.querySelector('.goog-te-combo')) {
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkReady, 500);
+                } else {
+                    console.log('Google Translate failed to load after maximum attempts');
+                }
+            };
+            
+            checkReady();
+        }
+
+        // Initialize Google Translate with better error handling
+        function initializeGoogleTranslate() {
+            console.log('Initializing Google Translate...');
+            
+            // Wait for Google Translate to be fully loaded
+            waitForGoogleTranslate(() => {
+                googleTranslateReady = true;
+                console.log('Google Translate is ready and functional');
+                
+                // Hide the Google Translate widget
+                const widget = document.getElementById('google_translate_element');
+                if (widget) {
+                    widget.style.display = 'none';
+                }
+                
+                // Hide any visible Google Translate elements
+                setTimeout(() => {
+                    const gadgets = document.querySelectorAll('.goog-te-gadget, .goog-te-banner-frame, .skiptranslate');
+                    gadgets.forEach(el => {
+                        el.style.display = 'none';
+                    });
+                }, 1000);
+            });
+        }
+
+        // Force hide Google Translate UI elements
+        function hideGoogleTranslateUI() {
+            const elementsToHide = [
+                '.goog-te-banner-frame',
+                '.goog-te-gadget',
+                '#google_translate_element',
+                '.goog-logo-link',
+                '.goog-te-balloon-frame'
+            ];
+            
+            elementsToHide.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    el.style.display = 'none !important';
+                    el.style.visibility = 'hidden !important';
+                });
+            });
+        }
+
+        // Override body top margin that Google Translate adds
+        function fixBodyMargin() {
+            document.body.style.top = '0px';
+            document.body.style.position = 'static';
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up Google Translate...');
+            
+            // Hide UI elements immediately
+            hideGoogleTranslateUI();
+            
+            // Set up periodic checks to hide Google Translate UI
+            setInterval(hideGoogleTranslateUI, 1000);
+            setInterval(fixBodyMargin, 1000);
+            
+            // Initialize Google Translate after a delay
+            setTimeout(initializeGoogleTranslate, 2000);
+        });
+
+        // Also initialize on window load as backup
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (!googleTranslateReady) {
+                    console.log('Backup initialization of Google Translate...');
+                    initializeGoogleTranslate();
+                }
+            }, 3000);
+        });
             } else {
                 console.log('Google Translate select element not found');
             }
